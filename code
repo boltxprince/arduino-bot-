@@ -1,0 +1,97 @@
+#include <SoftwareSerial.h>
+
+SoftwareSerial BTSerial(0, 1); // RX, TX for HC-05
+
+// Motor pins
+int IN1 = 10;  // Left motor IN1
+int IN2 = 9;  // Left motor IN2
+int IN3 = 12;  // Right motor IN1
+int IN4 = 11;  // Right motor IN2
+int ENA = 8;  // Speed control for left motor
+int ENB = 13; // Speed control for right motor
+
+int speedValue = 150; // Initial motor speed (0-255)
+
+void setup() {
+  // Motor pins setup
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(ENA, OUTPUT);
+  pinMode(ENB, OUTPUT);
+  
+  // Start Bluetooth communication
+  BTSerial.begin(9600);  // HC-05 Bluetooth module baud rate
+  Serial.begin(9600);    // Arduino Serial monitor baud rate
+}
+
+void loop() {
+  // Check if there's a Bluetooth command
+  if (BTSerial.available()) {
+    char command = BTSerial.read();
+    
+    switch(command) {
+      case 'F': // Forward
+        digitalWrite(IN1, HIGH);
+        digitalWrite(IN2, LOW);
+        digitalWrite(IN3, HIGH);
+        digitalWrite(IN4, LOW);
+        analogWrite(ENA, speedValue); // Set motor speed
+        analogWrite(ENB, speedValue); // Set motor speed
+        break;
+        
+      case 'B': // Backward
+        digitalWrite(IN1, LOW);
+        digitalWrite(IN2, HIGH);
+        digitalWrite(IN3, LOW);
+        digitalWrite(IN4, HIGH);
+        analogWrite(ENA, speedValue);
+        analogWrite(ENB, speedValue);
+        break;
+        
+      case 'L': // Left turn
+        digitalWrite(IN1, LOW);
+        digitalWrite(IN2, HIGH);
+        digitalWrite(IN3, HIGH);
+        digitalWrite(IN4, LOW);
+        analogWrite(ENA, speedValue);  // Slow down left motor
+        analogWrite(ENB, speedValue);  // Keep right motor at speed
+        break;
+        
+      case 'R': // Right turn
+        digitalWrite(IN1, HIGH);
+        digitalWrite(IN2, LOW);
+        digitalWrite(IN3, LOW);
+        digitalWrite(IN4, HIGH);
+        analogWrite(ENA, speedValue);  // Keep left motor at speed
+        analogWrite(ENB, speedValue);  // Slow down right motor
+        break;
+        
+      case 'S': // Stop
+        digitalWrite(IN1, LOW);
+        digitalWrite(IN2, LOW);
+        digitalWrite(IN3, LOW);
+        digitalWrite(IN4, LOW);
+        analogWrite(ENA, 0); // Stop motors
+        analogWrite(ENB, 0);
+        break;
+        
+      case 'U': // Speed Up
+        if (speedValue < 255) {
+          speedValue += 20; // Increase speed by 20 units
+          Serial.print("Speed increased to: ");
+          Serial.println(speedValue);
+        }
+        break;
+        
+      case 'D': // Speed Down
+        if (speedValue > 0) {
+          speedValue -= 20; // Decrease speed by 20 units
+          Serial.print("Speed decreased to: ");
+          Serial.println(speedValue);
+        }
+        break;
+    }
+  }
+}
